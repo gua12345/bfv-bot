@@ -79,6 +79,12 @@ func (a *EventApi) Post(c *gin.Context) {
 				// other: 敏感词检测
 				key, value := utils.GetCommandKeyValue(command)
 
+				// 添加日志输出
+                global.GLog.Info("已接收到命令",
+				zap.String("command", command),
+				zap.String("key", key),
+				zap.String("value", value))
+
 				groupCommandFunction, groupCommandOk := cmd.GetGroupCommandFunc(key)
 				_, shortCommandOk := cmd.GetGroupShortCommandFunc(command)
 
@@ -167,37 +173,38 @@ func (a *EventApi) Post(c *gin.Context) {
 		// 当前群得是激活状态
 		// 加群处理逻辑
 		if global.GConfig.QQBot.IsActiveGroup(msg.GroupID) && msg.RequestType == "group" && msg.SubType == "add" {
-			m := make(map[string]interface{})
+			var approve bool = true
+			var reason string = ""
 
 			// 优先判断黑名单
 			value, ok := global.GJoinBlackListMap[msg.UserID]
 			if ok {
-				m["approve"] = false
-				m["reason"] = fmt.Sprintf("黑名单, 原因: %s", value)
+				approve = false
+				reason = fmt.Sprintf("黑名单, 原因: %s", value)
 			} else {
 				match := GroupAnswerReg.FindStringSubmatch(msg.Comment)
 				if len(match) > 1 {
 					name := strings.TrimSpace(match[1])
 					if name == "" {
-						m["approve"] = false
-						m["reason"] = "未提供id"
+						approve = false
+						reason = "未提供id"
 					} else {
 						err, data := utils.CheckPlayer(url.QueryEscape(name))
 
 						if err != nil || data.PID == "" {
 							if global.GConfig.QQBot.EnableRejectJoinRequest {
-								m["approve"] = false
+								approve = false
 								if err != nil {
 									if err.Error() == cons.PlayerNotFound {
-										m["reason"] = "未能确认你提供的id"
+										reason = "未能确认你提供的id"
 									} else {
-										m["reason"] = "其他异常: " + err.Error()
+										reason = "其他异常: " + err.Error()
 									}
 								} else {
-									m["reason"] = "pid获取失败"
+									reason = "pid获取失败"
 								}
 							} else {
-								m["approve"] = true
+								approve = true
 
 								_ = global.GPool.Submit(func() {
 									time.Sleep(1 * time.Second)
@@ -235,22 +242,21 @@ func (a *EventApi) Post(c *gin.Context) {
 							if global.GConfig.QQBot.EnableRejectZeroRankJoinRequest {
 								err, baseInfo := utils.GetPlayerBaseInfo(data.PID)
 								if err != nil {
-									m["approve"] = false
-									m["reason"] = "获取基础信息失败, 请稍后再试"
+									approve = false
+									reason = "获取基础信息失败, 请稍后再试"
 								} else {
 									if baseInfo.BasicStats.Rank.Number == 0 {
-										m["approve"] = false
-										m["reason"] = "游戏内等级为0, 暂不能进群"
+										approve = false
+										reason = "游戏内等级为0, 暂不能进群"
 									} else {
-										m["approve"] = true
+										approve = true
 									}
 								}
 							} else {
-								m["approve"] = true
+								approve = true
 							}
-							boolObj := m["approve"]
 
-							if boolObj.(bool) {
+							if approve {
 								_ = global.GPool.Submit(func() {
 									time.Sleep(1 * time.Second)
 									// id正确
@@ -276,11 +282,17 @@ func (a *EventApi) Post(c *gin.Context) {
 						}
 					}
 				} else {
-					m["approve"] = false
-					m["reason"] = "未提供id"
+					approve = false
+					reason = "未提供id"
 				}
 			}
-			resp.ReplyWithData(c, m)
+
+			// 使用新的API接口处理加群请求
+			err = group.SetGroupAddRequest(msg.Flag, approve, reason)
+			if err != nil {
+				global.GLog.Error("SetGroupAddRequest", zap.Error(err))
+			}
+			resp.EmptyOk(c)
 			return
 		}
 	}

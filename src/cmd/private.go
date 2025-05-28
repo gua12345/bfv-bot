@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bfv-bot/bot/group"
 	"bfv-bot/bot/private"
 	"bfv-bot/common/global"
 	"bfv-bot/flow"
@@ -37,6 +38,9 @@ func init() {
 	privateOpCommandMap["deletejoinblacklist"] = opDeletejoinblacklist
 	privateOpCommandMap["blacklist"] = opBlacklist
 	privateOpCommandMap["sensitive"] = opSensitive
+	privateOpCommandMap["grouplist"] = opGroupList
+	privateOpCommandMap["getmsg"] = opGetMsg
+	privateOpCommandMap["grouphistory"] = opGroupHistory
 
 	privateQuickCommandMap["help"] = getPrivateHelpInfo
 	privateQuickCommandMap[".help"] = getPrivateHelpInfo
@@ -247,6 +251,82 @@ func op(msg *req.MsgData, c *gin.Context, key string, value string) {
 	resp.EmptyOk(c)
 }
 
+// 新增：获取群列表
+func opGroupList(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+	err, groupList := group.GetGroupList(false)
+	if err != nil {
+		resp.ReplyOk(c, "获取群列表失败: "+err.Error())
+		return
+	}
+	var builder strings.Builder
+	builder.WriteString("群列表:\n")
+	for _, groupInfo := range groupList {
+		builder.WriteString(fmt.Sprintf("群号: %d, 群名: %s\n", groupInfo.GroupId, groupInfo.GroupName))
+	}
+	resp.ReplyOk(c, builder.String())
+}
+
+// 新增：获取消息
+func opGetMsg(_ *req.MsgData, c *gin.Context, _ string, value string) {
+	messageId, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		resp.ReplyOk(c, "消息ID必须是数字")
+		return
+	}
+	err, msgData := group.GetMsg(messageId)
+	if err != nil {
+		resp.ReplyOk(c, "获取消息失败: "+err.Error())
+		return
+	}
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("消息ID: %d\n", msgData.MessageId))
+	builder.WriteString(fmt.Sprintf("消息类型: %s\n", msgData.MessageType))
+	builder.WriteString(fmt.Sprintf("发送者: %s(%d)\n", msgData.Sender.Nickname, msgData.Sender.UserId))
+	builder.WriteString(fmt.Sprintf("时间: %d\n", msgData.Time))
+	resp.ReplyOk(c, builder.String())
+}
+
+// 新增：获取群历史聊天记录
+func opGroupHistory(_ *req.MsgData, c *gin.Context, _ string, value string) {
+	// 解析参数: groupId,messageId,count
+	parts := strings.Split(value, ",")
+	if len(parts) < 2 {
+		resp.ReplyOk(c, "参数格式: 群号,消息ID[,数量]")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil {
+		resp.ReplyOk(c, "群号必须是数字")
+		return
+	}
+
+	messageId := parts[1]
+	count := 20 // 默认20条
+	if len(parts) >= 3 {
+		if c, err := strconv.Atoi(parts[2]); err == nil {
+			count = c
+		}
+	}
+
+	err, historyData := group.GetGroupMsgHistory(groupId, messageId, count)
+	if err != nil {
+		resp.ReplyOk(c, "获取群历史记录失败: "+err.Error())
+		return
+	}
+
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("群%d的历史消息(%d条):\n", groupId, len(historyData.Messages)))
+	for i, msg := range historyData.Messages {
+		if i >= 10 { // 最多显示10条
+			builder.WriteString("...(更多消息)\n")
+			break
+		}
+		builder.WriteString(fmt.Sprintf("%s: %s\n", msg.Sender.Nickname, msg.RawMessage))
+	}
+	resp.ReplyOk(c, builder.String())
+}
+
 func getPrivateHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
 	var builder strings.Builder
 	builder.WriteString("绑定token: bindtoken=<token>\n")
@@ -268,7 +348,10 @@ func getPrivateHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("清空加群黑名单: op=deletejoinblacklist\n")
 	builder.WriteString("加群黑名单列表: op=joinblacklist\n")
 	builder.WriteString("敏感词列表: op=sensitive\n")
-	builder.WriteString("黑名单列表: op=blacklist")
+	builder.WriteString("黑名单列表: op=blacklist\n")
+	builder.WriteString("获取群列表: op=grouplist\n")
+	builder.WriteString("获取消息: op=getmsg=<消息ID>\n")
+	builder.WriteString("获取群历史: op=grouphistory=<群号,消息ID[,数量]>")
 	resp.ReplyOk(c, builder.String())
 }
 
