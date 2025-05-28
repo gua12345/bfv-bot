@@ -22,13 +22,15 @@ func cx(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	path, err := utils.QueryAndStore(value, 1)
 	if err != nil {
 		global.GLog.Error("utils.QueryAndStore, 1", zap.String("name", value), zap.Error(err))
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
 
-	// 使用新协议的回复功能发送图片
-	resp.ImageWithReply(c, msg.MessageID, "file:///"+path, value+"的查询结果")
+	// 直接发送图片消息到群聊，而不是返回特殊响应格式
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
 func ban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
@@ -36,7 +38,8 @@ func ban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, "[屏蔽] 已下线")
+	group.SendGroupMsg(msg.GroupID, "[屏蔽] 已下线")
+	resp.EmptyOk(c)
 }
 
 func platoon(msg *req.MsgData, c *gin.Context, _ string, value string) {
@@ -44,10 +47,12 @@ func platoon(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	if err != nil {
 		global.GLog.Error("utils.GetJoinPlatoonsByName",
 			zap.String("name", value), zap.Error(err))
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, result)
+	group.SendGroupMsg(msg.GroupID, result)
+	resp.EmptyOk(c)
 }
 
 func banlog(msg *req.MsgData, c *gin.Context, _ string, value string) {
@@ -55,10 +60,12 @@ func banlog(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	if err != nil {
 		global.GLog.Error("utils.GetBanLog",
 			zap.String("name", value), zap.Error(err))
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, result)
+	group.SendGroupMsg(msg.GroupID, result)
+	resp.EmptyOk(c)
 }
 
 func removeban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
@@ -66,21 +73,25 @@ func removeban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, "[解除屏蔽] 已下线")
+	group.SendGroupMsg(msg.GroupID, "[解除屏蔽] 已下线")
+	resp.EmptyOk(c)
 }
 
 func bind(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, data := utils.CheckPlayer(value)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "绑定失败 "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "绑定失败 "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	err = dbService.AddBind(msg.UserID, value, data.PID)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "绑定失败 "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "绑定失败 "+err.Error())
+		resp.EmptyOk(c)
 		return
 	} else {
-		resp.ReplyWithReply(c, msg.MessageID, "绑定成功: "+data.PID)
+		group.SendGroupMsg(msg.GroupID, "绑定成功: "+data.PID)
+		resp.EmptyOk(c)
 		return
 	}
 }
@@ -88,10 +99,12 @@ func bind(msg *req.MsgData, c *gin.Context, _ string, value string) {
 func server(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, str := utils.GetBfvRobotServer(value, true)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, str)
+	group.SendGroupMsg(msg.GroupID, str)
+	resp.EmptyOk(c)
 }
 
 func data(msg *req.MsgData, c *gin.Context, _ string, value string) {
@@ -99,55 +112,64 @@ func data(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	path, err := utils.QueryAndStore(value, 2)
 	if err != nil {
 		global.GLog.Error("utils.QueryAndStore, 2", zap.String("name", value), zap.Error(err))
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
 
-	// 使用新协议的回复功能发送图片
-	resp.ImageWithReply(c, msg.MessageID, "file:///"+path, value+"的完整数据")
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
 func task(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	offset, err := strconv.Atoi(value)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "必须是数字")
+		group.SendGroupMsg(msg.GroupID, "必须是数字")
+		resp.EmptyOk(c)
 		return
 	}
 	path, err := utils.GetTaskAndCache(offset)
 	if err != nil {
 		global.GLog.Error("utils.GetTaskAndCache", zap.String("value", value), zap.Error(err))
-		resp.ReplyWithReply(c, msg.MessageID, "获取失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "获取失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
 
-	// 使用新协议的回复功能发送图片
-	resp.ImageWithReply(c, msg.MessageID, "file:///"+path, "周任务数据")
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
 func playerlist(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err, path := utils.GetPlayerList(value)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "获取失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "获取失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
 
-	// 使用新协议的回复功能发送图片
-	resp.ImageWithReply(c, msg.MessageID, "file:///"+path, "服务器玩家列表")
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
 func groupMember(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err, s := utils.GerServerGroupMember(value)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, err.Error())
+		group.SendGroupMsg(msg.GroupID, err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, s)
+	group.SendGroupMsg(msg.GroupID, s)
+	resp.EmptyOk(c)
 }
 
 func quickTask(msg *req.MsgData, c *gin.Context, key string) {
@@ -157,7 +179,8 @@ func quickTask(msg *req.MsgData, c *gin.Context, key string) {
 func ShortCommandFunction(msg *req.MsgData, c *gin.Context, command string) {
 	err, name := dbService.GetBindName(msg.UserID)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "快捷查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "快捷查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	groupCommandFunction, groupCommandOk := groupCommandMap[command]
@@ -169,10 +192,14 @@ func ShortCommandFunction(msg *req.MsgData, c *gin.Context, command string) {
 func getGroupServerInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	err, result := utils.GetBfvRobotServer(global.GConfig.Bfv.GroupUniName, false)
 	if err == nil {
-		resp.ReplyWithReply(c, msg.MessageID, result)
+		// 直接发送文本消息到群聊
+		group.SendGroupMsg(msg.GroupID, result)
+		resp.EmptyOk(c)
 		return
 	} else {
-		resp.ReplyWithReply(c, msg.MessageID, err.Error())
+		// 直接发送错误消息到群聊
+		group.SendGroupMsg(msg.GroupID, err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 }
@@ -180,16 +207,19 @@ func getGroupServerInfo(msg *req.MsgData, c *gin.Context, _ string) {
 func quickCx(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, data := utils.CheckPlayer(value)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 
 	err, finalMsg := utils.GetBaseInfoAndStatusByName(&data)
 	if err != nil {
-		resp.ReplyWithReply(c, msg.MessageID, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyWithReply(c, msg.MessageID, "玩家 ["+data.Name+"] 基础数据如下\n\n"+finalMsg)
+	group.SendGroupMsg(msg.GroupID, "玩家 ["+data.Name+"] 基础数据如下\n\n"+finalMsg)
+	resp.EmptyOk(c)
 }
 
 func getGroupHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
@@ -246,7 +276,8 @@ func getGroupHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("其他快捷指令: " + strings.Join(global.GConfig.QQBot.CustomCommandKey.GroupServer, "/") +
 		"/" + global.GConfig.Bfv.GroupName)
 
-	resp.ReplyWithReply(c, msg.MessageID, builder.String())
+	group.SendGroupMsg(msg.GroupID, builder.String())
+	resp.EmptyOk(c)
 }
 
 func InitBanlogKey(key string) {
