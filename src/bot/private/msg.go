@@ -18,7 +18,7 @@ func SendPrivateMsg(id int64, content string) {
 		"user_id": id,
 		"message": msg,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_private_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_private_msg", data)
 }
 
 // SendPrivateMsgMultiple 发送私聊消息给多人
@@ -48,5 +48,5 @@ func SendPrivateReplyMsg(id int64, msgId int64, content string) {
 		"user_id": id,
 		"message": messages,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_private_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_private_msg", data)
 }
