@@ -19,7 +19,7 @@ func SendGroupMsg(id int64, content string) {
 		"group_id": id,
 		"message":  msg,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
 }
 
 // SendGroupMsgMultiple 发送群聊消息给多个群
@@ -46,7 +46,7 @@ func SendAtGroupMsg(id int64, userId int64, content string) {
 		"group_id": id,
 		"message":  msgArr,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
 }
 
 func SendGroupReplyMsg(id int64, msgId int64, content string) {
@@ -68,7 +68,7 @@ func SendGroupReplyMsg(id int64, msgId int64, content string) {
 		"group_id": id,
 		"message":  messages,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
 }
 
 func SendGroupImageMsg(id int64, content string) {
@@ -84,7 +84,7 @@ func SendGroupImageMsg(id int64, content string) {
 		"group_id": id,
 		"message":  messages,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
 }
 
 func SendGroupImageReplyMsg(id int64, msgId int64, content string) {
@@ -106,7 +106,7 @@ func SendGroupImageReplyMsg(id int64, msgId int64, content string) {
 		"group_id": id,
 		"message":  messages,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
 }
 
 // DeleteMsg 撤回消息
@@ -115,5 +115,5 @@ func DeleteMsg(id int64) {
 	data := map[string]interface{}{
 		"message_id": id,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/delete_msg_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/delete_msg", data)
 }

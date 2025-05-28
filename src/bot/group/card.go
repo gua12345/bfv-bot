@@ -11,5 +11,5 @@ func SetCard(groupId int64, userId int64, card string) {
 		"user_id":  userId,
 		"card":     card,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_card_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_card", data)
 }

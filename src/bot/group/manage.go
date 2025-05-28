@@ -15,7 +15,7 @@ func SetGroupKick(groupId int64, userId int64) {
 		"user_id":            userId,
 		"reject_add_request": false,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_kick_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_kick", data)
 }
 
 func GetGroupMemberInfo(groupId int64, userId int64) (error, dto.GetGroupMemberInfoData) {
@@ -48,7 +48,7 @@ func SetGroupWholeBan(groupId int64, enable bool) {
 		"group_id": groupId,
 		"enable":   enable,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_whole_ban_async", data)
+	_, _ = http.Post(global.GConfig.QQBot.Address+"/set_group_whole_ban", data)
 }
 
 func GetGroupMemberList(groupId int64) (error, []dto.GetGroupMemberListData) {
