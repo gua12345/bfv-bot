@@ -49,36 +49,31 @@ func init() {
 
 func opStart(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.Bfv.Active = true
-	private.SendPrivateMsg(msg.UserID, "开始检测")
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, "开始检测")
 }
 
 func opStop(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.Bfv.Active = false
 	global.GConfig.Bfv.ClearGameId()
-	private.SendPrivateMsg(msg.UserID, "结束检测")
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, "结束检测")
 }
 
 func opStartBroadcast(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.QQBot.BotToBot.Enable = true
-	private.SendPrivateMsg(msg.UserID, "开始喊话")
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, "开始喊话")
 }
 
 func opStopBroadcast(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.QQBot.BotToBot.Enable = false
-	private.SendPrivateMsg(msg.UserID, "结束喊话")
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, "结束喊话")
 }
 
 func opChecknow(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	cronService.CheckBlackListAndNotify()
-	private.SendPrivateMsg(msg.UserID, "立即检测")
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, "立即检测")
 }
 
-func opGameid(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opGameid(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	var builder strings.Builder
 	for _, info := range global.GConfig.Bfv.Server {
 		builder.WriteString(info.ServerName)
@@ -90,10 +85,10 @@ func opGameid(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 		}
 		builder.WriteString("\n")
 	}
-	resp.ReplyOk(c, builder.String())
+	resp.ReplyWithReply(c, msg.MessageID, builder.String())
 }
 
-func opToken(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opToken(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	var builder strings.Builder
 	for _, info := range global.GConfig.Bfv.Server {
 		builder.WriteString(info.ServerName)
@@ -105,10 +100,10 @@ func opToken(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 		}
 		builder.WriteString("\n")
 	}
-	resp.ReplyOk(c, builder.String())
+	resp.ReplyWithReply(c, msg.MessageID, builder.String())
 }
 
-func opJoinBlackList(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opJoinBlackList(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	list := dbService.QueryAllJoinBlackList()
 	var builder strings.Builder
 	builder.WriteString("加群黑名单\n")
@@ -123,19 +118,19 @@ func opJoinBlackList(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 	if len(finalStr) > 0 {
 		finalStr = finalStr[:len(finalStr)-1]
 	}
-	resp.ReplyOk(c, finalStr)
+	resp.ReplyWithReply(c, msg.MessageID, finalStr)
 }
 
-func opDeletejoinblacklist(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opDeletejoinblacklist(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	err := dbService.DeleteAllJoinBlackList()
 	if err != nil {
-		resp.ReplyOk(c, "清空加群黑名单失败")
+		resp.ReplyWithReply(c, msg.MessageID, "清空加群黑名单失败")
 	} else {
-		resp.ReplyOk(c, "清空加群黑名单成功")
+		resp.ReplyWithReply(c, msg.MessageID, "清空加群黑名单成功")
 	}
 }
 
-func opBlacklist(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opBlacklist(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	list := dbService.QueryAllBlackList()
 	var builder strings.Builder
 	builder.WriteString("黑名单\n")
@@ -150,10 +145,10 @@ func opBlacklist(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 		builder.WriteString(value.Reason)
 		builder.WriteString("\n")
 	}
-	resp.ReplyOk(c, builder.String())
+	resp.ReplyWithReply(c, msg.MessageID, builder.String())
 }
 
-func opSensitive(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opSensitive(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	list := dbService.SelectAllSensitive()
 	var builder strings.Builder
 	builder.WriteString("敏感词\n")
@@ -163,7 +158,7 @@ func opSensitive(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 		builder.WriteString(item)
 		builder.WriteString("\n")
 	}
-	resp.ReplyOk(c, builder.String())
+	resp.ReplyWithReply(c, msg.MessageID, builder.String())
 }
 
 func addblack(msg *req.MsgData, c *gin.Context, _ string, value string) {
@@ -174,44 +169,44 @@ func addblack(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	resp.EmptyOk(c)
 }
 
-func removeblack(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func removeblack(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err := dbService.RemoveBlack(value)
 	if err != nil {
-		resp.ReplyOk(c, "移除失败")
+		resp.ReplyWithReply(c, msg.MessageID, "移除失败")
 	} else {
-		resp.ReplyOk(c, fmt.Sprintf("黑名单用户 [%s] 移除成功", value))
+		resp.ReplyWithReply(c, msg.MessageID, fmt.Sprintf("黑名单用户 [%s] 移除成功", value))
 	}
 }
 
-func removecardcheck(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func removecardcheck(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	qq, _ := strconv.ParseInt(value, 10, 64)
 	err := dbService.DeleteCardCheck(qq)
 	if err != nil {
-		resp.ReplyOk(c, "移除失败")
+		resp.ReplyWithReply(c, msg.MessageID, "移除失败")
 	} else {
-		resp.ReplyOk(c, fmt.Sprintf("ID检测 [%s] 移除成功", value))
+		resp.ReplyWithReply(c, msg.MessageID, fmt.Sprintf("ID检测 [%s] 移除成功", value))
 	}
 }
 
-func addsensitive(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func addsensitive(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err := dbService.AddSensitive(value)
 	if err != nil {
-		resp.ReplyOk(c, "添加失败")
+		resp.ReplyWithReply(c, msg.MessageID, "添加失败")
 	} else {
-		resp.ReplyOk(c, fmt.Sprintf("添加成功"))
+		resp.ReplyWithReply(c, msg.MessageID, fmt.Sprintf("添加成功"))
 		global.GSensitive.AddWord(value)
 	}
 }
 
-func removesensitive(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func removesensitive(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err := dbService.RemoveSensitive(value)
 	if err != nil {
-		resp.ReplyOk(c, "移除失败")
+		resp.ReplyWithReply(c, msg.MessageID, "移除失败")
 	} else {
-		resp.ReplyOk(c, "移除成功, 重启生效")
+		resp.ReplyWithReply(c, msg.MessageID, "移除成功, 重启生效")
 	}
 
 }
@@ -224,12 +219,12 @@ func addjoinblacklist(msg *req.MsgData, c *gin.Context, _ string, value string) 
 	resp.EmptyOk(c)
 }
 
-func removejoinblacklist(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func removejoinblacklist(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err := dbService.RemoveJoinBlackList(value)
 	if err != nil {
-		resp.ReplyOk(c, "移除失败")
+		resp.ReplyWithReply(c, msg.MessageID, "移除失败")
 	} else {
-		resp.ReplyOk(c, fmt.Sprintf("[移除加群黑名单] [%s] 移除成功", value))
+		resp.ReplyWithReply(c, msg.MessageID, fmt.Sprintf("[移除加群黑名单] [%s] 移除成功", value))
 	}
 }
 
@@ -366,8 +361,7 @@ func getPrivateHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("获取群列表: op=grouplist\n")
 	builder.WriteString("获取消息: op=getmsg=<消息ID>\n")
 	builder.WriteString("获取群历史: op=grouphistory=<群号,消息ID[,数量]>")
-	private.SendPrivateMsg(msg.UserID, builder.String())
-	resp.EmptyOk(c)
+	resp.ReplyWithReply(c, msg.MessageID, builder.String())
 }
 
 func GetPrivateCommandFunc(key string) (func(*req.MsgData, *gin.Context, string, string), bool) {

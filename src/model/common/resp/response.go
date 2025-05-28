@@ -26,6 +26,30 @@ type ReplyResponse struct {
 	Reply string `json:"reply"`
 }
 
+// 新增：回复消息段数据结构
+type ReplyData struct {
+	Id interface{} `json:"id"` // 支持string和int64
+}
+
+type ReplyMessage struct {
+	Type string    `json:"type"`
+	Data ReplyData `json:"data"`
+}
+
+type TextData struct {
+	Text string `json:"text"`
+}
+
+type TextMessage struct {
+	Type string   `json:"type"`
+	Data TextData `json:"data"`
+}
+
+// 新增：支持回复的消息响应结构
+type ReplyWithMessageResponse struct {
+	Reply []interface{} `json:"reply"`
+}
+
 func EmptyOk(c *gin.Context) {
 	c.JSON(http.StatusOK, EmptyResponse{})
 }
@@ -45,4 +69,34 @@ func ImageOk(c *gin.Context, path string, nickname string) {
 		Summary: nickname,
 	}}
 	c.JSON(http.StatusOK, ImageReply{Reply: data})
+}
+
+// 新增：支持回复消息的文本响应
+func ReplyWithReply(c *gin.Context, messageId int64, message string) {
+	reply := []interface{}{
+		ReplyMessage{
+			Type: "reply",
+			Data: ReplyData{Id: messageId},
+		},
+		TextMessage{
+			Type: "text",
+			Data: TextData{Text: message},
+		},
+	}
+	c.JSON(http.StatusOK, ReplyWithMessageResponse{Reply: reply})
+}
+
+// 新增：支持回复消息的图片响应
+func ImageWithReply(c *gin.Context, messageId int64, file string, summary string) {
+	reply := []interface{}{
+		ReplyMessage{
+			Type: "reply",
+			Data: ReplyData{Id: messageId},
+		},
+		ImageMessage{
+			Type: "image",
+			Data: Data{File: file, Summary: summary},
+		},
+	}
+	c.JSON(http.StatusOK, ReplyWithMessageResponse{Reply: reply})
 }
