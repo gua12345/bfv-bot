@@ -1,0 +1,75 @@
+事件委托
+本节将列举所有的可订阅的事件委托
+
+字段	类型	描述
+OnBotOnlineEvent	LagrangeEvent<BotOnlineEvent>?	Bot 上线时触发,可用于监控是否登录成功
+OnBotOfflineEvent	LagrangeEvent<BotOfflineEvent>?	Bot 下线时触发,可用于监控 Bot 是否掉线
+OnBotLogEvent	LagrangeEvent<BotLogEvent>?	日志产生时触发
+OnBotCaptchaEvent	LagrangeEvent<BotCaptchaEvent>?	Bot 需要验证码时触发
+OnGroupInvitationReceived	LagrangeEvent<GroupInvitationEvent>?	Bot 被邀请入群时触发
+OnFriendMessageReceived	LagrangeEvent<FriendMessageEvent>?	收到私聊消息时触发
+OnGroupMessageReceived	LagrangeEvent<GroupMessageEvent>?	收到群聊消息时触发
+OnTempMessageReceived	LagrangeEvent<TempMessageEvent>?	收到群临时消息时触发
+OnGroupAdminChangedEvent	LagrangeEvent<GroupAdminChangedEvent>?	群管变更时触发
+OnGroupMemberIncreaseEvent	LagrangeEvent<GroupMemberIncreaseEvent>?	有人入群时触发
+OnGroupMemberDecreaseEvent	LagrangeEvent<GroupMemberDecreaseEvent>?	有人退群时触发
+OnGroupMemberDecreaseEvent	LagrangeEvent<FriendRequestEvent>?	有好友申请时触发
+事件数据 EventArgs
+本节介绍所有的事件被触发时传递的数据
+
+数据基类 EventBase
+所有事件数据均继承自此类
+
+字段	类型	描述
+EventTime	DateTime	事件被触发时的时间
+EventMessage	string	事件消息概述
+Bot 上线事件 BotOnlineEvent
+无额外字段
+
+Bot 下线事件 BotOfflineEvent
+无额外字段
+
+Bot 日志事件 BotLogEvent
+字段	类型	描述
+Tag	string	发生的地点标签
+Level	LogLevel	事件消息概述
+ToString() 方法覆写, 返回日志概述
+
+日志内容为基类的 EventMessage
+
+Bot 验证码事件 BotCaptchaEvent
+字段	类型	描述
+Url	string	验证码链接
+Bot 私聊消息事件 FriendMessageEvent
+字段	类型	描述
+Chain	MessageChain	消息链
+Bot 群聊消息事件 GroupMessageEvent
+字段	类型	描述
+Chain	MessageChain	消息链
+Bot 临时消息事件 GroupMessageEvent
+暂未实现
+
+Bot 好友请求事件 FriendRequestEvent
+字段	类型	描述
+SourceUin	uint	对方 Uin
+Name	string	对方昵称
+Message	string	对方发送的验证消息内容
+Bot 所在群管理变更事件 GroupAdminChangedEvent
+字段	类型	描述
+GroupUin	uint	群 Uin
+AdminUin	string	管理 Uin
+IsPromote	bool	是否为晋升
+Bot 被邀请至群事件 GroupInvitationEvent
+字段	类型	描述
+GroupUin	uint	群 Uin
+InvitorUin	uint	邀请者 Uin
+Bot 所在群新增成员事件 GroupMemberIncreaseEvent
+字段	类型	描述
+GroupUin	uint	群 Uin
+MemberUin	uint	成员 Uin
+InvitorUin	uint?	邀请者 Uin (自己入群为 null)
+Bot 所在群新增成员事件 GroupMemberDecreaseEvent
+字段	类型	描述
+GroupUin	uint	群 Uin
+MemberUin	uint	成员 Uin
+OperatorUin	uint?	操作者 Uin (主动退群为 null)

@@ -49,8 +49,10 @@ func (a *EventApi) Post(c *gin.Context) {
 			return
 		}
 
-		// 消息格式不是数组的不处理
-		if msg.MessageFormat != "array" {
+		// 消息格式检查：新接口没有message_format字段，旧接口需要是array格式
+		// 如果有message_format字段且不是array，则不处理（兼容旧接口）
+		if msg.MessageFormat != "" && msg.MessageFormat != "array" {
+			global.GLog.Info("消息格式不支持", zap.String("message_format", msg.MessageFormat))
 			resp.EmptyOk(c)
 			return
 		}
@@ -59,9 +61,14 @@ func (a *EventApi) Post(c *gin.Context) {
 
 			// 没有启用的群的消息不处理
 			if !global.GConfig.QQBot.IsActiveGroup(msg.GroupID) {
+				global.GLog.Info("群组未激活",
+					zap.Int64("群ID", msg.GroupID),
+					zap.Any("激活群列表", global.GConfig.QQBot.ActiveGroup))
 				resp.EmptyOk(c)
 				return
 			}
+
+			global.GLog.Info("群组已激活，开始处理消息", zap.Int64("群ID", msg.GroupID))
 			// 非文本消息不处理
 			if msg.Message[0].Type == "text" {
 				// 是否在流程中
@@ -89,15 +96,27 @@ func (a *EventApi) Post(c *gin.Context) {
 				_, shortCommandOk := cmd.GetGroupShortCommandFunc(command)
 
 				groupQuickCommandFunction, groupQuickCommandOk := cmd.GetGroupQuickCommandFunc(command)
+
+				// 添加更多调试信息
+				global.GLog.Info("命令匹配结果",
+					zap.Bool("groupCommandOk", groupCommandOk),
+					zap.Bool("shortCommandOk", shortCommandOk),
+					zap.Bool("groupQuickCommandOk", groupQuickCommandOk))
+
 				if groupCommandOk {
+					global.GLog.Info("执行群组命令", zap.String("key", key), zap.String("value", value))
 					groupCommandFunction(&msg, c, key, value)
 					return
 				} else if shortCommandOk {
+					global.GLog.Info("执行短命令", zap.String("command", command))
 					cmd.ShortCommandFunction(&msg, c, command)
 					return
 				} else if groupQuickCommandOk {
+					global.GLog.Info("执行快捷命令", zap.String("command", command))
 					groupQuickCommandFunction(&msg, c, command)
 					return
+				} else {
+					global.GLog.Info("没有匹配到任何命令", zap.String("key", key), zap.String("command", command))
 				}
 
 				// 敏感词检测
