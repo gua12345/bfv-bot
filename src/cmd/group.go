@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bfv-bot/bot/group"
 	"bfv-bot/common/global"
 	"bfv-bot/common/utils"
 	"bfv-bot/model/common/req"
@@ -16,16 +17,20 @@ func init() {
 	groupCommandMap["removeban"] = removeban
 }
 
-func cx(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func cx(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	path, err := utils.QueryAndStore(value, 1)
 	if err != nil {
 		global.GLog.Error("utils.QueryAndStore, 1", zap.String("name", value), zap.Error(err))
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
-	resp.ImageOk(c, "file:///"+path, value+"的查询结果")
+
+	// 直接发送图片消息到群聊，而不是返回特殊响应格式
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
 func ban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
@@ -33,7 +38,8 @@ func ban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, "[屏蔽] 已下线")
+	group.SendGroupMsg(msg.GroupID, "[屏蔽] 已下线")
+	resp.EmptyOk(c)
 }
 
 func platoon(msg *req.MsgData, c *gin.Context, _ string, value string) {
@@ -41,21 +47,25 @@ func platoon(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	if err != nil {
 		global.GLog.Error("utils.GetJoinPlatoonsByName",
 			zap.String("name", value), zap.Error(err))
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, result)
+	group.SendGroupMsg(msg.GroupID, result)
+	resp.EmptyOk(c)
 }
 
-func banlog(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func banlog(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, result := utils.GetBanLog(value)
 	if err != nil {
 		global.GLog.Error("utils.GetBanLog",
 			zap.String("name", value), zap.Error(err))
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, result)
+	group.SendGroupMsg(msg.GroupID, result)
+	resp.EmptyOk(c)
 }
 
 func removeban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
@@ -63,81 +73,103 @@ func removeban(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, "[解除屏蔽] 已下线")
+	group.SendGroupMsg(msg.GroupID, "[解除屏蔽] 已下线")
+	resp.EmptyOk(c)
 }
 
 func bind(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, data := utils.CheckPlayer(value)
 	if err != nil {
-		resp.ReplyOk(c, "绑定失败 "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "绑定失败 "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	err = dbService.AddBind(msg.UserID, value, data.PID)
 	if err != nil {
-		resp.ReplyOk(c, "绑定失败 "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "绑定失败 "+err.Error())
+		resp.EmptyOk(c)
 		return
 	} else {
-		resp.ReplyOk(c, "绑定成功: "+data.PID)
+		group.SendGroupMsg(msg.GroupID, "绑定成功: "+data.PID)
+		resp.EmptyOk(c)
 		return
 	}
 }
 
-func server(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func server(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, str := utils.GetBfvRobotServer(value, true)
 	if err != nil {
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, str)
+	group.SendGroupMsg(msg.GroupID, str)
+	resp.EmptyOk(c)
 }
 
-func data(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func data(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	path, err := utils.QueryAndStore(value, 2)
 	if err != nil {
 		global.GLog.Error("utils.QueryAndStore, 2", zap.String("name", value), zap.Error(err))
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
-	resp.ImageOk(c, "file:///"+path, value+"的完整数据")
+
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
-func task(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func task(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	offset, err := strconv.Atoi(value)
 	if err != nil {
-		resp.ReplyOk(c, "必须是数字")
+		group.SendGroupMsg(msg.GroupID, "必须是数字")
+		resp.EmptyOk(c)
 		return
 	}
 	path, err := utils.GetTaskAndCache(offset)
 	if err != nil {
 		global.GLog.Error("utils.GetTaskAndCache", zap.String("value", value), zap.Error(err))
-		resp.ReplyOk(c, "获取失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "获取失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
-	resp.ImageOk(c, "file:///"+path, "周任务数据")
+
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
-func playerlist(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func playerlist(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err, path := utils.GetPlayerList(value)
 	if err != nil {
-		resp.ReplyOk(c, "获取失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "获取失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	global.GLog.Info("file:///" + path)
-	resp.ImageOk(c, "file:///"+path, "服务器玩家列表")
+
+	// 直接发送图片消息到群聊
+	group.SendGroupImageMsg(msg.GroupID, "file:///"+path)
+	resp.EmptyOk(c)
 }
 
-func groupMember(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func groupMember(msg *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err, s := utils.GerServerGroupMember(value)
 	if err != nil {
-		resp.ReplyOk(c, err.Error())
+		group.SendGroupMsg(msg.GroupID, err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, s)
+	group.SendGroupMsg(msg.GroupID, s)
+	resp.EmptyOk(c)
 }
 
 func quickTask(msg *req.MsgData, c *gin.Context, key string) {
@@ -147,7 +179,8 @@ func quickTask(msg *req.MsgData, c *gin.Context, key string) {
 func ShortCommandFunction(msg *req.MsgData, c *gin.Context, command string) {
 	err, name := dbService.GetBindName(msg.UserID)
 	if err != nil {
-		resp.ReplyOk(c, "快捷查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "快捷查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	groupCommandFunction, groupCommandOk := groupCommandMap[command]
@@ -156,33 +189,40 @@ func ShortCommandFunction(msg *req.MsgData, c *gin.Context, command string) {
 	}
 }
 
-func getGroupServerInfo(_ *req.MsgData, c *gin.Context, _ string) {
+func getGroupServerInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	err, result := utils.GetBfvRobotServer(global.GConfig.Bfv.GroupUniName, false)
 	if err == nil {
-		resp.ReplyOk(c, result)
+		// 直接发送文本消息到群聊
+		group.SendGroupMsg(msg.GroupID, result)
+		resp.EmptyOk(c)
 		return
 	} else {
-		resp.ReplyOk(c, err.Error())
+		// 直接发送错误消息到群聊
+		group.SendGroupMsg(msg.GroupID, err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 }
 
-func quickCx(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func quickCx(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	err, data := utils.CheckPlayer(value)
 	if err != nil {
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 
 	err, finalMsg := utils.GetBaseInfoAndStatusByName(&data)
 	if err != nil {
-		resp.ReplyOk(c, "查询失败: "+err.Error())
+		group.SendGroupMsg(msg.GroupID, "查询失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
-	resp.ReplyOk(c, "玩家 ["+data.Name+"] 基础数据如下\n\n"+finalMsg)
+	group.SendGroupMsg(msg.GroupID, "玩家 ["+data.Name+"] 基础数据如下\n\n"+finalMsg)
+	resp.EmptyOk(c)
 }
 
-func getGroupHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
+func getGroupHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	var builder strings.Builder
 
 	if len(global.GConfig.QQBot.CustomCommandKey.Banlog) != 0 {
@@ -236,7 +276,8 @@ func getGroupHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("其他快捷指令: " + strings.Join(global.GConfig.QQBot.CustomCommandKey.GroupServer, "/") +
 		"/" + global.GConfig.Bfv.GroupName)
 
-	resp.ReplyOk(c, builder.String())
+	group.SendGroupMsg(msg.GroupID, builder.String())
+	resp.EmptyOk(c)
 }
 
 func InitBanlogKey(key string) {

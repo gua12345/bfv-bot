@@ -47,30 +47,35 @@ func init() {
 
 }
 
-func opStart(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opStart(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.Bfv.Active = true
-	resp.ReplyOk(c, "开始检测")
+	private.SendPrivateMsg(msg.UserID, "开始检测")
+	resp.EmptyOk(c)
 }
 
-func opStop(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opStop(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.Bfv.Active = false
 	global.GConfig.Bfv.ClearGameId()
-	resp.ReplyOk(c, "结束检测")
+	private.SendPrivateMsg(msg.UserID, "结束检测")
+	resp.EmptyOk(c)
 }
 
-func opStartBroadcast(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opStartBroadcast(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.QQBot.BotToBot.Enable = true
-	resp.ReplyOk(c, "开始喊话")
+	private.SendPrivateMsg(msg.UserID, "开始喊话")
+	resp.EmptyOk(c)
 }
 
-func opStopBroadcast(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opStopBroadcast(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	global.GConfig.QQBot.BotToBot.Enable = false
-	resp.ReplyOk(c, "结束喊话")
+	private.SendPrivateMsg(msg.UserID, "结束喊话")
+	resp.EmptyOk(c)
 }
 
-func opChecknow(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opChecknow(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	cronService.CheckBlackListAndNotify()
-	resp.ReplyOk(c, "立即检测")
+	private.SendPrivateMsg(msg.UserID, "立即检测")
+	resp.EmptyOk(c)
 }
 
 func opGameid(_ *req.MsgData, c *gin.Context, _ string, _ string) {
@@ -252,10 +257,11 @@ func op(msg *req.MsgData, c *gin.Context, key string, value string) {
 }
 
 // 新增：获取群列表
-func opGroupList(_ *req.MsgData, c *gin.Context, _ string, _ string) {
+func opGroupList(msg *req.MsgData, c *gin.Context, _ string, _ string) {
 	err, groupList := group.GetGroupList(false)
 	if err != nil {
-		resp.ReplyOk(c, "获取群列表失败: "+err.Error())
+		private.SendPrivateMsg(msg.UserID, "获取群列表失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	var builder strings.Builder
@@ -263,19 +269,22 @@ func opGroupList(_ *req.MsgData, c *gin.Context, _ string, _ string) {
 	for _, groupInfo := range groupList {
 		builder.WriteString(fmt.Sprintf("群号: %d, 群名: %s\n", groupInfo.GroupId, groupInfo.GroupName))
 	}
-	resp.ReplyOk(c, builder.String())
+	private.SendPrivateMsg(msg.UserID, builder.String())
+	resp.EmptyOk(c)
 }
 
 // 新增：获取消息
-func opGetMsg(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func opGetMsg(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	messageId, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		resp.ReplyOk(c, "消息ID必须是数字")
+		private.SendPrivateMsg(msg.UserID, "消息ID必须是数字")
+		resp.EmptyOk(c)
 		return
 	}
 	err, msgData := group.GetMsg(messageId)
 	if err != nil {
-		resp.ReplyOk(c, "获取消息失败: "+err.Error())
+		private.SendPrivateMsg(msg.UserID, "获取消息失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 	var builder strings.Builder
@@ -283,21 +292,24 @@ func opGetMsg(_ *req.MsgData, c *gin.Context, _ string, value string) {
 	builder.WriteString(fmt.Sprintf("消息类型: %s\n", msgData.MessageType))
 	builder.WriteString(fmt.Sprintf("发送者: %s(%d)\n", msgData.Sender.Nickname, msgData.Sender.UserId))
 	builder.WriteString(fmt.Sprintf("时间: %d\n", msgData.Time))
-	resp.ReplyOk(c, builder.String())
+	private.SendPrivateMsg(msg.UserID, builder.String())
+	resp.EmptyOk(c)
 }
 
 // 新增：获取群历史聊天记录
-func opGroupHistory(_ *req.MsgData, c *gin.Context, _ string, value string) {
+func opGroupHistory(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	// 解析参数: groupId,messageId,count
 	parts := strings.Split(value, ",")
 	if len(parts) < 2 {
-		resp.ReplyOk(c, "参数格式: 群号,消息ID[,数量]")
+		private.SendPrivateMsg(msg.UserID, "参数格式: 群号,消息ID[,数量]")
+		resp.EmptyOk(c)
 		return
 	}
 
 	groupId, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		resp.ReplyOk(c, "群号必须是数字")
+		private.SendPrivateMsg(msg.UserID, "群号必须是数字")
+		resp.EmptyOk(c)
 		return
 	}
 
@@ -311,7 +323,8 @@ func opGroupHistory(_ *req.MsgData, c *gin.Context, _ string, value string) {
 
 	err, historyData := group.GetGroupMsgHistory(groupId, messageId, count)
 	if err != nil {
-		resp.ReplyOk(c, "获取群历史记录失败: "+err.Error())
+		private.SendPrivateMsg(msg.UserID, "获取群历史记录失败: "+err.Error())
+		resp.EmptyOk(c)
 		return
 	}
 
@@ -324,10 +337,11 @@ func opGroupHistory(_ *req.MsgData, c *gin.Context, _ string, value string) {
 		}
 		builder.WriteString(fmt.Sprintf("%s: %s\n", msg.Sender.Nickname, msg.RawMessage))
 	}
-	resp.ReplyOk(c, builder.String())
+	private.SendPrivateMsg(msg.UserID, builder.String())
+	resp.EmptyOk(c)
 }
 
-func getPrivateHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
+func getPrivateHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	var builder strings.Builder
 	builder.WriteString("绑定token: bindtoken=<token>\n")
 	builder.WriteString("绑定gameid: bindgameid=<gameid>\n")
@@ -352,7 +366,8 @@ func getPrivateHelpInfo(_ *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("获取群列表: op=grouplist\n")
 	builder.WriteString("获取消息: op=getmsg=<消息ID>\n")
 	builder.WriteString("获取群历史: op=grouphistory=<群号,消息ID[,数量]>")
-	resp.ReplyOk(c, builder.String())
+	private.SendPrivateMsg(msg.UserID, builder.String())
+	resp.EmptyOk(c)
 }
 
 func GetPrivateCommandFunc(key string) (func(*req.MsgData, *gin.Context, string, string), bool) {
