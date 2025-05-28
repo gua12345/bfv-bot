@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bfv-bot/bot/group"
 	"bfv-bot/common/global"
 	"bfv-bot/common/utils"
 	"bfv-bot/model/common/req"
