@@ -127,6 +127,8 @@ qq-bot:
   enable-reject-join-request: false
   # 是否拒绝等级为0的id的加群申请
   enable-reject-zero-rank-join-request: false
+  # 是否拒绝申请加入已满人群聊的人
+  enable-reject-full-group-join-request: false
 
 ai:
   # ai服务用的百度的, 所以要去百度千帆申请ak/sk, 和开通对应模型

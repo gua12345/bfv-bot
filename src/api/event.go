@@ -200,7 +200,24 @@ func (a *EventApi) Post(c *gin.Context) {
 			if ok {
 				approve = false
 				reason = fmt.Sprintf("黑名单, 原因: %s", value)
-			} else {
+			} else if global.GConfig.QQBot.EnableRejectFullGroupJoinRequest {
+				// 检查群是否已满
+				err, groupInfo := group.GetGroupInfo(msg.GroupID, true)
+				if err != nil {
+					global.GLog.Error("GetGroupInfo", zap.Error(err))
+					// 如果获取群信息失败，继续正常流程
+				} else if groupInfo.MemberCount >= groupInfo.MaxMemberCount {
+					approve = false
+					reason = "群聊已满，暂时无法加入"
+					global.GLog.Info("拒绝加群申请：群聊已满",
+						zap.Int64("群ID", msg.GroupID),
+						zap.Int64("申请人", msg.UserID),
+						zap.Int("当前人数", groupInfo.MemberCount),
+						zap.Int("最大人数", groupInfo.MaxMemberCount))
+				}
+			}
+
+			if approve {
 				match := GroupAnswerReg.FindStringSubmatch(msg.Comment)
 				if len(match) > 1 {
 					name := strings.TrimSpace(match[1])

@@ -86,6 +86,20 @@ type GroupHistoryMessage struct {
 	Sender      MsgSender   `json:"sender"`
 }
 
+// 新增：获取群信息相关结构
+type GetGroupInfoResp struct {
+	Status  string          `json:"status"`
+	Retcode int             `json:"retcode"`
+	Data    GetGroupInfoData `json:"data"`
+}
+
+type GetGroupInfoData struct {
+	GroupId        int64  `json:"group_id"`
+	GroupName      string `json:"group_name"`
+	MemberCount    int    `json:"member_count"`
+	MaxMemberCount int    `json:"max_member_count"`
+}
+
 // 新增：处理加群请求相关结构
 type SetGroupAddRequestResp struct {
 	Status  string      `json:"status"`

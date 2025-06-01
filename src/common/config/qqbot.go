@@ -20,6 +20,7 @@ type QQBot struct {
 	EnablePlayerlistShowGroupMember bool                   `mapstructure:"enable-playerlist-show-group-member" yaml:"enable-playerlist-show-group-member"`
 	EnableRejectJoinRequest         bool                   `mapstructure:"enable-reject-join-request" yaml:"enable-reject-join-request"`
 	EnableRejectZeroRankJoinRequest bool                   `mapstructure:"enable-reject-zero-rank-join-request" yaml:"enable-reject-zero-rank-join-request"`
+	EnableRejectFullGroupJoinRequest bool                   `mapstructure:"enable-reject-full-group-join-request" yaml:"enable-reject-full-group-join-request"`
 	// 私有属性
 	activeGroupMap map[int64]bool
 	adminQqMap     map[int64]bool

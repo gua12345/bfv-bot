@@ -165,6 +165,30 @@ func GetGroupMsgHistory(groupId int64, messageId string, count int) (error, dto.
 	return nil, result.Data
 }
 
+// 新增：获取群信息
+func GetGroupInfo(groupId int64, noCache bool) (error, dto.GetGroupInfoData) {
+	data := map[string]interface{}{
+		"group_id": groupId,
+		"no_cache": noCache,
+	}
+	post, err := http.Post(global.GConfig.QQBot.Address+"/get_group_info", data)
+	if err != nil {
+		global.GLog.Error("get_group_info", zap.Error(err))
+		return err, dto.GetGroupInfoData{}
+	}
+	var result dto.GetGroupInfoResp
+	err = des.StringToStruct(post, &result)
+	if err != nil {
+		global.GLog.Error("StringToStruct", zap.Error(err))
+		return err, dto.GetGroupInfoData{}
+	}
+	if result.Status != "ok" || result.Retcode != 0 {
+		global.GLog.Error("get_group_info", zap.String("status", result.Status), zap.Int("retcode", result.Retcode))
+		return errors.New("bot接口异常"), dto.GetGroupInfoData{}
+	}
+	return nil, result.Data
+}
+
 // 新增：处理加群请求/邀请
 func SetGroupAddRequest(flag string, approve bool, reason string) error {
 	data := map[string]interface{}{

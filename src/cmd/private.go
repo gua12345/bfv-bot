@@ -41,6 +41,7 @@ func init() {
 	privateOpCommandMap["grouplist"] = opGroupList
 	privateOpCommandMap["getmsg"] = opGetMsg
 	privateOpCommandMap["grouphistory"] = opGroupHistory
+	privateOpCommandMap["groupinfo"] = opGroupInfo
 
 	privateQuickCommandMap["help"] = getPrivateHelpInfo
 	privateQuickCommandMap[".help"] = getPrivateHelpInfo
@@ -341,6 +342,37 @@ func opGroupHistory(msg *req.MsgData, c *gin.Context, _ string, value string) {
 	resp.EmptyOk(c)
 }
 
+// 新增：获取群信息
+func opGroupInfo(msg *req.MsgData, c *gin.Context, _ string, value string) {
+	groupId, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		private.SendPrivateMsg(msg.UserID, "群号必须是数字")
+		resp.EmptyOk(c)
+		return
+	}
+
+	err, groupInfo := group.GetGroupInfo(groupId, true)
+	if err != nil {
+		private.SendPrivateMsg(msg.UserID, "获取群信息失败: "+err.Error())
+		resp.EmptyOk(c)
+		return
+	}
+
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("群号: %d\n", groupInfo.GroupId))
+	builder.WriteString(fmt.Sprintf("群名: %s\n", groupInfo.GroupName))
+	builder.WriteString(fmt.Sprintf("当前人数: %d\n", groupInfo.MemberCount))
+	builder.WriteString(fmt.Sprintf("最大人数: %d\n", groupInfo.MaxMemberCount))
+	if groupInfo.MemberCount >= groupInfo.MaxMemberCount {
+		builder.WriteString("状态: 已满\n")
+	} else {
+		builder.WriteString(fmt.Sprintf("状态: 未满 (还可加入%d人)\n", groupInfo.MaxMemberCount-groupInfo.MemberCount))
+	}
+
+	private.SendPrivateMsg(msg.UserID, builder.String())
+	resp.EmptyOk(c)
+}
+
 func getPrivateHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	var builder strings.Builder
 	builder.WriteString("绑定token: bindtoken=<token>\n")
@@ -365,7 +397,8 @@ func getPrivateHelpInfo(msg *req.MsgData, c *gin.Context, _ string) {
 	builder.WriteString("黑名单列表: op=blacklist\n")
 	builder.WriteString("获取群列表: op=grouplist\n")
 	builder.WriteString("获取消息: op=getmsg=<消息ID>\n")
-	builder.WriteString("获取群历史: op=grouphistory=<群号,消息ID[,数量]>")
+	builder.WriteString("获取群历史: op=grouphistory=<群号,消息ID[,数量]>\n")
+	builder.WriteString("获取群信息: op=groupinfo=<群号>")
 	private.SendPrivateMsg(msg.UserID, builder.String())
 	resp.EmptyOk(c)
 }
