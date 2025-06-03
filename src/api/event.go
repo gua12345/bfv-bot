@@ -245,7 +245,9 @@ func (a *EventApi) Post(c *gin.Context) {
 								_ = global.GPool.Submit(func() {
 									time.Sleep(1 * time.Second)
 									// 欢迎信息
-									group.SendAtGroupMsg(msg.GroupID, msg.UserID, global.GConfig.QQBot.WelcomeMsg)
+									welcomeMessage := global.GConfig.QQBot.WelcomeMsg + "\n\n机器人已自动修改你的昵称为: [" + name + "]"
+									group.SendAtGroupMsg(msg.GroupID, msg.UserID, welcomeMessage)
+
 									global.GLog.Error("utils.CheckPlayer", zap.Error(err))
 									if err.Error() == cons.PlayerNotFound {
 
@@ -296,17 +298,22 @@ func (a *EventApi) Post(c *gin.Context) {
 								_ = global.GPool.Submit(func() {
 									time.Sleep(1 * time.Second)
 									// id正确
-									group.SendAtGroupMsg(msg.GroupID, msg.UserID, global.GConfig.QQBot.WelcomeMsg)
-
-									group.SetCard(msg.GroupID, msg.UserID, name)
-									extendMsg := " 机器人已自动修改你的昵称为: [" + name + "]"
+									welcomeMessage := global.GConfig.QQBot.WelcomeMsg + "\n\n机器人已自动修改你的昵称为: [" + name + "]"
 									if global.GConfig.QQBot.ShowPlayerBaseInfo {
 										err, finalMsg := utils.GetBaseInfoAndStatusByName(&data)
 										if err == nil {
-											extendMsg += "\n\n该玩家基础数据如下:\n\n" + finalMsg
+											welcomeMessage += "\n\n该玩家基础数据如下:\n\n" + finalMsg
 										}
 									}
-									group.SendAtGroupMsg(msg.GroupID, msg.UserID, extendMsg)
+									group.SendAtGroupMsg(msg.GroupID, msg.UserID, welcomeMessage)
+
+									group.SetCard(msg.GroupID, msg.UserID, name)
+
+									if global.GConfig.QQBot.BotToBot.EnableQueryBanRecordByBot {
+										// 发送查询封禁记录的指令
+										queryMsg := fmt.Sprintf("/listban %s", name)
+										group.SendAtGroupMsg(msg.GroupID, global.GConfig.QQBot.BotToBot.BotQq, queryMsg)
+									}
 
 									err = dbService.AddBind(msg.UserID, data.Name, data.PID)
 									if err != nil {

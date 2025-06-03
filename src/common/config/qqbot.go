@@ -57,6 +57,7 @@ type MuteConfig struct {
 type BotToBotConfig struct {
 	Enable           bool     `mapstructure:"enable" yaml:"enable"`
 	BotQq            int64    `mapstructure:"bot-qq" yaml:"bot-qq"`
+	EnableQueryBanRecordByBot bool `mapstructure:"enable-query-ban-record-by-bot" yaml:"enable-query-ban-record-by-bot"`
 	Interval         int      `mapstructure:"interval" yaml:"interval"`
 	MultiMsgInterval int      `mapstructure:"multi-msg-interval" yaml:"multi-msg-interval"`
 	Msg              []string `mapstructure:"msg" yaml:"msg"`
