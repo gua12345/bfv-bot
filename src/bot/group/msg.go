@@ -46,7 +46,12 @@ func SendAtGroupMsg(id int64, userId int64, content string) {
 		"group_id": id,
 		"message":  msgArr,
 	}
-	_, _ = http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
+	resp, err := http.Post(global.GConfig.QQBot.Address+"/send_group_msg", data)
+	if err != nil {
+		global.GLog.Error("SendAtGroupMsg: http.Post error", zap.Error(err))
+	} else {
+		global.GLog.Info("SendAtGroupMsg: http.Post response", zap.String("response", string(resp)))
+	}
 }
 
 func SendGroupReplyMsg(id int64, msgId int64, content string) {

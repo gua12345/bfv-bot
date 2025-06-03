@@ -310,6 +310,10 @@ func (a *EventApi) Post(c *gin.Context) {
 									group.SetCard(msg.GroupID, msg.UserID, name)
 
 									if global.GConfig.QQBot.BotToBot.EnableQueryBanRecordByBot {
+										global.GLog.Info("发送封禁记录查询信息",
+											zap.Int64("group_id", msg.GroupID),
+											zap.Int64("bot_qq", global.GConfig.QQBot.BotToBot.BotQq),
+											zap.String("player_name", name))
 										// 发送查询封禁记录的指令
 										queryMsg := fmt.Sprintf("/listban %s", name)
 										group.SendAtGroupMsg(msg.GroupID, global.GConfig.QQBot.BotToBot.BotQq, queryMsg)
