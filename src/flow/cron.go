@@ -3,6 +3,7 @@ package flow
 import (
 	"bfv-bot/bot/group"
 	"bfv-bot/bot/private"
+	"bfv-bot/common/global"
 	"time"
 )
 
@@ -40,4 +41,12 @@ func CleanExpiredGroupFlow() {
 		DeleteGroupStepByKey(item)
 	}
 
+}
+
+func CurfewLog(isStart bool) {
+	if isStart {
+		global.LOG.Info("宵禁时间已到，机器人进入宵禁模式。")
+	} else {
+		global.LOG.Info("宵禁时间结束，机器人解除宵禁模式。")
+	}
 }
