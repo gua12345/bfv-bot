@@ -45,8 +45,8 @@ func CleanExpiredGroupFlow() {
 
 func CurfewLog(isStart bool) {
 	if isStart {
-		global.GLog.Info("宵禁时间已到，机器人进入宵禁模式。")
+		global.LOG.Info("宵禁时间已到，机器人进入宵禁模式。")
 	} else {
-		global.GLog.Info("宵禁时间结束，机器人解除宵禁模式。")
+		global.LOG.Info("宵禁时间结束，机器人解除宵禁模式。")
 	}
 }
