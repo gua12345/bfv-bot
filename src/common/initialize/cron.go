@@ -102,19 +102,17 @@ func Cron() {
 		}
 		global.GLog.Info("已启用自动宵禁功能")
 	}
-		global.GLog.Info("已启用自动宵禁功能")
 
-		// 宵禁时间日志
-		_, err = global.GCron.AddFunc(fmt.Sprintf("%s %s * * ?", endMinute, endHour), func() { flow.CurfewLog(false) })
-		if err != nil {
-			global.GLog.Error("CurfewLogEnd", zap.Error(err))
-			return
-		}
-		_, err = global.GCron.AddFunc(fmt.Sprintf("%s %s * * ?", startMinute, startHour), func() { flow.CurfewLog(true) })
-		if err != nil {
-			global.GLog.Error("CurfewLogStart", zap.Error(err))
-			return
-		}
+	// 宵禁时间日志
+	_, err = global.GCron.AddFunc(fmt.Sprintf("%s %s * * ?", endMinute, endHour), func() { flow.CurfewLog(false) })
+	if err != nil {
+		global.GLog.Error("CurfewLogEnd", zap.Error(err))
+		return
+	}
+	_, err = global.GCron.AddFunc(fmt.Sprintf("%s %s * * ?", startMinute, startHour), func() { flow.CurfewLog(true) })
+	if err != nil {
+		global.GLog.Error("CurfewLogStart", zap.Error(err))
+		return
 	}
 
 	global.GCron.Start()
