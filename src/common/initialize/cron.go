@@ -101,6 +101,8 @@ func Cron() {
 			return
 		}
 		global.GLog.Info("已启用自动宵禁功能")
+	}
+		global.GLog.Info("已启用自动宵禁功能")
 
 		// 宵禁时间日志
 		_, err = global.GCron.AddFunc(fmt.Sprintf("%s %s * * ?", endMinute, endHour), func() { flow.CurfewLog(false) })
