@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bfv-bot/common/cons"
 	"bfv-bot/common/global"
 	"bfv-bot/common/initialize"
 	"fmt"
@@ -18,6 +19,9 @@ func main() {
 	// 初始化日志
 	global.GLog = initialize.Zap()
 	zap.ReplaceGlobals(global.GLog)
+
+	// 初始化API URL
+	cons.InitApiUrls()
 
 	// 初始化数据库链接以及DAO
 	initialize.InitDb()

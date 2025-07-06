@@ -15,4 +15,6 @@ type Config struct {
 	Bfv Bfv `mapstructure:"bfv" yaml:"bfv"`
 	// ai
 	Ai Ai `mapstructure:"ai" yaml:"ai"`
+	// api
+	Api Api `mapstructure:"api" yaml:"api"`
 }

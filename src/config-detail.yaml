@@ -142,6 +142,15 @@ ai:
   secret-key: "123"
 
 
+# API配置 - 可自定义各个服务的基础URL
+api:
+  # BfBan API 基础URL 默认: https://api.bfban.com
+  bfban-base-url: "https://api.bfban.com"
+  # BfvRobot API 基础URL 默认: https://api.bfvrobot.net
+  bfvrobot-base-url: "https://api.bfvrobot.net"
+  # GameTools API 基础URL 默认: https://api.gametools.network
+  gametools-base-url: "https://api.gametools.network"
+
 bfv:
   # 群组唯一名称 比如miku... 这个配置是与<开服信息>搭配使用的, 机器人会使用这个唯一名称搜索服务器列表
   group-uni-name: "miku"
