@@ -31,8 +31,6 @@ qq-bot:
   welcome-msg: " 本服已接入离线版机器人，如被踢请仔细阅读服务器限制或使用机器人自助查询。"
   # 加群时是否展示玩家基础数据
   show-player-base-info: true
-  #加群id检测等级，1：检测通过才今年如 2：检测不通过也进入
-  join-check-level: 2
   # 超级管理员qq 目前仅用于接收启动消息
   super-admin-qq: 123
   # 管理员qq, 只有管理员能使用管理命令
