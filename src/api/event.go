@@ -445,6 +445,7 @@ func (a *EventApi) Post(c *gin.Context) {
 			resp.EmptyOk(c)
 			return
 		}
+		}
 	}
 
 	resp.EmptyOk(c)
