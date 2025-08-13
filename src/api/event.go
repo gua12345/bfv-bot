@@ -431,7 +431,9 @@ func (a *EventApi) Post(c *gin.Context) {
 					}
 				}
 			}
-			break
+			case 0:
+				// 默认级别
+				approve = true
 			default:
 				// 未知的 JoinCheckLevel，默认拒绝加入
 				approve = false
@@ -447,7 +449,8 @@ func (a *EventApi) Post(c *gin.Context) {
 			return
 		}
 	}
-
+	resp.EmptyOk(c)
+}
 
 
 func isManager(sender req.Sender) bool {
