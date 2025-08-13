@@ -448,9 +448,7 @@ func (a *EventApi) Post(c *gin.Context) {
 		}
 	}
 
-	resp.EmptyOk(c)
-	return
-}
+
 
 func isManager(sender req.Sender) bool {
 	return sender.Role == "admin" || sender.Role == "owner"
