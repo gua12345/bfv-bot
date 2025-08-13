@@ -21,6 +21,7 @@ type QQBot struct {
 	EnableRejectJoinRequest         bool                   `mapstructure:"enable-reject-join-request" yaml:"enable-reject-join-request"`
 	EnableRejectZeroRankJoinRequest bool                   `mapstructure:"enable-reject-zero-rank-join-request" yaml:"enable-reject-zero-rank-join-request"`
 	EnableRejectFullGroupJoinRequest bool                   `mapstructure:"enable-reject-full-group-join-request" yaml:"enable-reject-full-group-join-request"`
+	JoinCheckLevel                   int                    `mapstructure:"join-check-level" yaml:"join-check-level"`
 	// 私有属性
 	activeGroupMap map[int64]bool
 	adminQqMap     map[int64]bool
@@ -64,6 +65,9 @@ type BotToBotConfig struct {
 }
 
 func (q *QQBot) InitMap() {
+	if q.JoinCheckLevel == 0 {
+		q.JoinCheckLevel = 1
+	}
 	q.activeGroupMap = make(map[int64]bool)
 	for _, item := range q.ActiveGroup {
 		q.activeGroupMap[item] = true
