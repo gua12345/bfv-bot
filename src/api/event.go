@@ -221,6 +221,8 @@ func (a *EventApi) Post(c *gin.Context) {
 				match := GroupAnswerReg.FindStringSubmatch(msg.Comment)
 				if len(match) > 1 {
 					name := strings.TrimSpace(match[1])
+					// 统一去除中文字符
+					name = utils.RemoveChinese(name)
 					if name == "" {
 						approve = false
 						reason = "未提供id"
@@ -228,53 +230,90 @@ func (a *EventApi) Post(c *gin.Context) {
 						err, data := utils.CheckPlayer(url.QueryEscape(name))
 
 						if err != nil || data.PID == "" {
-							if global.GConfig.QQBot.EnableRejectJoinRequest {
-								approve = false
-								if err != nil {
-									if err.Error() == cons.PlayerNotFound {
-										reason = "未能确认你提供的id"
+							// 根据加群检测等级决定处理方式
+							if global.GConfig.QQBot.JoinCheckLevel == 1 {
+								// 等级1: ID检测要完全通过才同意
+								if global.GConfig.QQBot.EnableRejectJoinRequest {
+									approve = false
+									if err != nil {
+										if err.Error() == cons.PlayerNotFound {
+											reason = "未能确认你提供的id"
+										} else {
+											reason = "其他异常: " + err.Error()
+										}
 									} else {
-										reason = "其他异常: " + err.Error()
+										reason = "pid获取失败"
 									}
 								} else {
-									reason = "pid获取失败"
-								}
-							} else {
-								approve = true
+									approve = true
+									_ = global.GPool.Submit(func() {
+										time.Sleep(1 * time.Second)
+										// 欢迎信息
+										welcomeMessage := global.GConfig.QQBot.WelcomeMsg + "\n\n机器人已自动修改你的昵称为: [" + name + "]"
+										group.SendAtGroupMsg(msg.GroupID, msg.UserID, welcomeMessage)
 
+										global.GLog.Error("utils.CheckPlayer", zap.Error(err))
+										if err.Error() == cons.PlayerNotFound {
+											content := " 机器人无法确认你提供的ID: [" + name + "]，请再次检查并修改你的群名片"
+											if global.GConfig.QQBot.EnableAutoKickErrorNickname {
+												content += "。超时将被踢出群聊"
+											}
+											group.SendAtGroupMsg(msg.GroupID, msg.UserID, content)
+											// 提供了错误id
+											// 第二次检测在6个小时后
+											// 第三次在48个小时后 第三次检测仍然无法确认的话 则踢出
+											err := dbService.AddCardCheck(msg.UserID, msg.GroupID)
+											if err != nil {
+												global.GLog.Error("dbService.AddCardCheck", zap.Error(err))
+											}
+										} else {
+											group.SendAtGroupMsg(msg.GroupID, msg.UserID,
+												" 机器人已自动修改你的昵称为: ["+name+"]")
+											group.SetCard(msg.GroupID, msg.UserID, name)
+											private.SendPrivateMsgMultiple(global.GConfig.QQBot.AdminQq,
+												fmt.Sprintf("ID服务异常, 无法确认qq: %d 提供的id: %s", msg.UserID, name))
+										}
+									})
+								}
+							} else if global.GConfig.QQBot.JoinCheckLevel == 2 {
+								// 等级2: ID检测不通过也同意进入，但不发送封禁记录查询和基本信息，并发送异常情况到群里
+								approve = true
 								_ = global.GPool.Submit(func() {
 									time.Sleep(1 * time.Second)
 									// 欢迎信息
 									welcomeMessage := global.GConfig.QQBot.WelcomeMsg + "\n\n机器人已自动修改你的昵称为: [" + name + "]"
 									group.SendAtGroupMsg(msg.GroupID, msg.UserID, welcomeMessage)
+									group.SetCard(msg.GroupID, msg.UserID, name)
 
-									global.GLog.Error("utils.CheckPlayer", zap.Error(err))
-									if err.Error() == cons.PlayerNotFound {
-
-										content := " 机器人无法确认你提供的ID: [" + name + "]，请再次检查并修改你的群名片"
-
-										if global.GConfig.QQBot.EnableAutoKickErrorNickname {
-											content += "。超时将被踢出群聊"
-										}
-
-										group.SendAtGroupMsg(msg.GroupID, msg.UserID, content)
-										// 提供了错误id
-										// 第二次检测在6个小时后
-										// 第三次在48个小时后 第三次检测仍然无法确认的话 则踢出
-										err := dbService.AddCardCheck(msg.UserID, msg.GroupID)
-										if err != nil {
-											global.GLog.Error("dbService.AddCardCheck", zap.Error(err))
+									// 发送异常情况到群里
+									var errorMsg string
+									if err != nil {
+										if err.Error() == cons.PlayerNotFound {
+											errorMsg = fmt.Sprintf("⚠️ 用户 %d 提供的ID: [%s] 无法确认，请注意", msg.UserID, name)
+										} else {
+											errorMsg = fmt.Sprintf("⚠️ 用户 %d 提供的ID: [%s] 检测异常: %s", msg.UserID, name, err.Error())
 										}
 									} else {
-										group.SendAtGroupMsg(msg.GroupID, msg.UserID,
-											" 机器人已自动修改你的昵称为: ["+name+"]")
-										group.SetCard(msg.GroupID, msg.UserID, name)
-
-										private.SendPrivateMsgMultiple(global.GConfig.QQBot.AdminQq,
-											fmt.Sprintf("ID服务异常, 无法确认qq: %d 提供的id: %s", msg.UserID, name))
+										errorMsg = fmt.Sprintf("⚠️ 用户 %d 提供的ID: [%s] PID获取失败", msg.UserID, name)
 									}
+									group.SendGroupMsg(msg.GroupID, errorMsg)
 								})
-
+							} else {
+								// 默认行为（兼容旧配置）
+								if global.GConfig.QQBot.EnableRejectJoinRequest {
+									approve = false
+									if err != nil {
+										if err.Error() == cons.PlayerNotFound {
+											reason = "未能确认你提供的id"
+										} else {
+											reason = "其他异常: " + err.Error()
+										}
+									} else {
+										reason = "pid获取失败"
+									}
+								} else {
+									approve = true
+								}
 							}
 						} else {
 							if global.GConfig.QQBot.EnableRejectZeroRankJoinRequest {
@@ -299,7 +338,9 @@ func (a *EventApi) Post(c *gin.Context) {
 									time.Sleep(1 * time.Second)
 									// id正确
 									welcomeMessage := global.GConfig.QQBot.WelcomeMsg + "\n\n机器人已自动修改你的昵称为: [" + name + "]"
-									if global.GConfig.QQBot.ShowPlayerBaseInfo {
+
+									// 根据加群检测等级决定是否显示基本信息
+									if global.GConfig.QQBot.JoinCheckLevel != 2 && global.GConfig.QQBot.ShowPlayerBaseInfo {
 										err, finalMsg := utils.GetBaseInfoAndStatusByName(&data)
 										if err == nil {
 											welcomeMessage += "\n\n该玩家基础数据如下:\n\n" + finalMsg
@@ -309,7 +350,8 @@ func (a *EventApi) Post(c *gin.Context) {
 
 									group.SetCard(msg.GroupID, msg.UserID, name)
 
-									if global.GConfig.QQBot.BotToBot.EnableQueryBanRecordByBot {
+									// 根据加群检测等级决定是否发送封禁记录查询
+									if global.GConfig.QQBot.JoinCheckLevel != 2 && global.GConfig.QQBot.BotToBot.EnableQueryBanRecordByBot {
 										global.GLog.Info("发送封禁记录查询信息",
 											zap.Int64("group_id", msg.GroupID),
 											zap.Int64("bot_qq", global.GConfig.QQBot.BotToBot.BotQq),

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 var timeRegex = regexp.MustCompile(`^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$`)
@@ -59,4 +60,15 @@ func SplitByColon(str string) (string, string) {
 // IsValidTimeFormat 校验字符串是否符合 "HH:MM" 格式
 func IsValidTimeFormat(timeStr string) bool {
 	return timeRegex.MatchString(timeStr)
+}
+
+// RemoveChinese 去除字符串中的中文字符
+func RemoveChinese(str string) string {
+	var result strings.Builder
+	for _, r := range str {
+		if !unicode.Is(unicode.Han, r) {
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
 }
