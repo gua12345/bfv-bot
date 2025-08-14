@@ -24,7 +24,6 @@ import (
 )
 
 var (
-	GroupAnswerReg = regexp.MustCompile(`(?i)id.?[:：\s]*([a-z0-9\s_.-]+)`)
 	// 匹配ID,去除中文
 	regChinese = regexp.MustCompile("[\u4e00-\u9fa5]")
 )
