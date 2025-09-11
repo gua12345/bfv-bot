@@ -195,6 +195,11 @@ func (a *EventApi) Post(c *gin.Context) {
 			var approve bool = true
 			var reason string = ""
 
+			if global.GConfig.QQBot.JoinCheckLevel == 0 {
+				global.GLog.Info("已关闭加群处理")
+				return
+			}
+
 			// 优先判断黑名单
 			value, ok := global.GJoinBlackListMap[msg.UserID]
 			if ok {
